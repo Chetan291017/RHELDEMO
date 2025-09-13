@@ -22,7 +22,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "Downloading and installing XAMPP ... "
-            wget https://sourceforge.net/projects/xampp/files/XAMPP%20Linux/8.2.12/xampp-linux-x64-8.2.12-0-installe… -O /tmp/xampp-installer.run
+            wget https://sourceforge.net/projects/xampp/files/XAMPP%20Linux/8.2.12/xampp-linux-x64-8.2.12-0-installer.run -O /tmp/xampp-installer.run
             chmod +x /tmp/xampp-installer.run
             sudo /tmp/xampp-installer.run -- mode unattended
             echo "XAMPP installed successfully."
