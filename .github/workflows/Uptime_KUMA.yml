@@ -20,9 +20,9 @@ jobs:
     steps:
       - name: Expand SSH key path
         run: |
-          KEY_PATH="${{ github.event.inputs.ssh_key_path }}"
+          KEY_PATH="${{ github.event.inputs.SSH_PRIVATE_KEY }}"
           KEY_PATH="${KEY_PATH/#\~/$HOME}"
-          echo "SSH_KEY=$KEY_PATH" >> $GITHUB_ENV
+          echo "SSH_PRIVATE_KEY=$KEY_PATH" >> $GITHUB_ENV
 
       - name: Add host to known_hosts
         run: |
@@ -32,13 +32,13 @@ jobs:
 
       - name: Test SSH connectivity
         run: |
-          ssh -i "$SSH_KEY" -o BatchMode=yes -o ConnectTimeout=5 \
+          ssh -i "$SSH_PRIVATE_KEY" -o BatchMode=yes -o ConnectTimeout=5 \
             "${{ github.event.inputs.user }}"@"${{ github.event.inputs.server }}" \
             "echo '✅ SSH Connected to $(hostname)'"
 
       - name: Install Uptime Kuma
         run: |
-          ssh -i "$SSH_KEY" "${{ github.event.inputs.user }}"@"${{ github.event.inputs.server }}" <<'EOF'
+          ssh -i "$SSH_PRIVATE_KEY" "${{ github.event.inputs.user }}"@"${{ github.event.inputs.server }}" <<'EOF'
             set -e
             # Update & install dependencies
             sudo apt-get update -y
@@ -82,5 +82,5 @@ jobs:
 
       - name: Confirm service status
         run: |
-          ssh -i "$SSH_KEY" "${{ github.event.inputs.user }}"@"${{ github.event.inputs.server }}" \
+          ssh -i "$SSH_PRIVATE_KEY" "${{ github.event.inputs.user }}"@"${{ github.event.inputs.server }}" \
             "systemctl is-active uptime-kuma && echo '🎉 Uptime Kuma installed & running at http://${{ github.event.inputs.server }}:3001'"
