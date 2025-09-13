@@ -40,6 +40,11 @@ jobs:
         run: |
           ssh -i "$SSH_PRIVATE_KEY" "${{ github.event.inputs.user }}"@"${{ github.event.inputs.server }}" <<'EOF'
             set -e
+            cd $HOME/uptime-kuma
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S $HOME/uptime-kuma --mode unattended
+            echo "XAMPP installed successfully."
+            echo "Uptime Kuma"
+            echo "${{ secrets.SUDO_PASSWORD }}" | sudo -S $HOME/uptime-kuma start
             # Update & install dependencies
             sudo apt-get update -y
             sudo apt-get install -y git curl build-essential
