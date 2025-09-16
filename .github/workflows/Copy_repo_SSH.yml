@@ -21,8 +21,8 @@ jobs:
       - name: Checkout Repo B (private via GitHub deploy key)
         uses: actions/checkout@v3
         with:
-          repository: triovative-bot/daypredict
-          ssh-key: ${{ secrets.GH_DEPLOY_KEY }}   # 👈 deploy key for GitHub
+          repository: Chetan291017/CK_Private
+          ssh-key: ${{ secrets.CK_PUB_DEPLOY_KEY }}   # 👈 deploy key for GitHub Public Repo
           ref: main
           path: repo-b
           persist-credentials: false
@@ -33,7 +33,7 @@ jobs:
 
       - name: Test SSH connection to server
         run: |
-          echo "${{ secrets.SERVER_SSH_KEY }}" > id_rsa
+          echo "${{ secrets.CK_PUB_DEPLOY_KEY }}" > id_rsa
           chmod 600 id_rsa
           ssh -o StrictHostKeyChecking=no -i id_rsa ${{ github.event.inputs.server_user }}@${{ github.event.inputs.server_ip }} "echo Connected OK"
 
@@ -42,9 +42,9 @@ jobs:
         with:
           host: ${{ github.event.inputs.server_ip }}
           username: ${{ github.event.inputs.server_user }}
-          key: ${{ secrets.SERVER_SSH_KEY }}     # 👈 key for target server
+          key: ${{ secrets.CK_PUB_DEPLOY_KEY }}     # 👈 key for target server
           port: 22
-          source: "repo-b/index.php"
-          target: "/data"
+          source: "repo-b/ChetankumarSunilKulkarniResume.pdf"
+          target: "/home/admino/CK_RHEL_DATA"
           overwrite: true
           debug: true
