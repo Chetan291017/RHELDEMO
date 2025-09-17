@@ -1,0 +1,42 @@
+name: Deploy file from another repo via SSH key to Target server using Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      server_ip:
+        description: "Target server IP"
+        required: true
+      server_user:
+        description: "Target server username"
+        required: true
+
+jobs:
+  deployment_environment:
+    runs-on: self-hosted
+    environment: development
+
+    steps:
+      - name: Checkout Repo A (current repo)
+        uses: actions/checkout@v3
+
+      - name: Checkout Repo B (private via GitHub deploy key)
+        uses: actions/checkout@v3
+        with:
+          repository: Chetan291017/CK_Private
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_REPO_ACCESS }}   # 👈 deploy key for GitHub Public Repo
+          ref: main
+          path: repo-b
+          persist-credentials: false
+          ssh-strict: false
+
+      - name: Copy file from Repo B to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ github.event.inputs.server_ip }}
+          username: ${{ github.event.inputs.server_user }}
+          key: ${{ secrets.SSH_PRIVATE_KEY_RHEL }}     # 👈 key for target server
+          port: 22
+          source: "repo-b/ChetankumarSunilKulkarniResume.pdf"
+          target: "/home/admino/CK_RHEL_DATA"
+          overwrite: true
+          debug: true
