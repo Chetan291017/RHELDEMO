@@ -50,7 +50,7 @@ jobs:
           host: ${{ github.event.inputs.server_ip }}
           username: ${{ github.event.inputs.server_user }}
           key: ${{ secrets.SSH_PRIVATE_KEY_RHEL }}
-           port: 22
+          port: 22
           source: "repo-b/ChetankumarSunilKulkarniResume.pdf"
           target: "/home/admino/CK_RHEL_DATA"
           overwrite: true
