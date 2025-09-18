@@ -22,6 +22,8 @@ jobs:
           path: web
           persist-credentials: false
           ssh-strict: false
+      - name: Debug Repo Structure
+        run: ls -R web
  
       - name: Archive Website Code
         run: |
@@ -46,20 +48,19 @@ jobs:
         with:
           name: website-code
           path: .
- 
-      - name: Extract Artifact
-        run: |
-          tar -xzf website.tar.gz
- 
-      - name: Copy Files to XAMPP Server via SSH
+      - name: Copy & Extract Artifact on Remote
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY_RHEL }}" > private_key.pem
           chmod 600 private_key.pem
-          scp -i private_key.pem -o StrictHostKeyChecking=no website.tar.gz \ ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/home/${{ secrets.USERNAME }}/
 
-          ssh -i private_key.pem -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} \ 
+          # Copy the tarball to remote user's home
+          scp -i private_key.pem -o StrictHostKeyChecking=no website.tar.gz \
+            ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/home/${{ secrets.USERNAME }}/
+
+          # Extract with sudo into /opt/lampp/htdocs and clean up
+          ssh -i private_key.pem -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} \
             "sudo tar -xzf /home/${{ secrets.USERNAME }}/website.tar.gz -C /opt/lampp/htdocs/ && rm /home/${{ secrets.USERNAME }}/website.tar.gz"
- 
+
       - name: Restart Apache in XAMPP
         run: |
           ssh -i private_key.pem -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} \
@@ -73,7 +74,20 @@ jobs:
     steps:
       - name: Wait for Web Server
         run: sleep 10
- 
-      - name: Test Website URL
+
+      - name: Test Root URL
         run: |
-          curl -I http://${{ secrets.SERVER_IP }} | grep "200 OK" || exit 1
+          echo "Checking root URL..."
+          curl -I http://${{ secrets.SERVER_IP }}/ | grep "200 OK" || exit 1
+
+      - name: Test Index Page
+        run: |
+          echo "Checking /index.html..."
+          curl -I http://${{ secrets.SERVER_IP }}/index.html | grep "200 OK" || exit 1
+
+      - name: Verify Index Content
+        run: |
+          echo "Verifying index.html content..."
+          curl -s http://${{ secrets.SERVER_IP }}/index.html | grep "Welcome" || exit 1    
+      
+ 
