@@ -1,63 +1,70 @@
 name: CI for XAMPP Web Server
+
 on:
   push:
     branches: [ "main" ]
   workflow_dispatch:   # allow manual trigger
- 
+
 jobs:
   build:
     name: Build Stage - Checkout Repositories
     runs-on: self-hosted
- 
+
     steps:
       - name: Checkout Repo A (CI pipeline repo)
         uses: actions/checkout@v3
- 
+
       - name: Checkout Repo B (private via GitHub deploy key)
         uses: actions/checkout@v3
         with:
           repository: Chetan291017/CK_Private
-          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_REPO_ACCESS }}   # 👈 deploy key for GitHub Public Repo
+          ssh-key: ${{ secrets.SSH_PRIVATE_KEY_REPO_ACCESS }}
           ref: main
           path: web
           persist-credentials: false
           ssh-strict: false
+
       - name: Debug Repo Structure
         run: ls -R web
- 
+
       - name: Archive Website Code
         run: |
-          ls -R web
-          tar -czf website.tar.gz -C web/website .
+          if [ -d "web/website" ]; then
+            echo "📦 Archiving from web/website..."
+            tar -czf website.tar.gz -C web/website .
+          else
+            echo "📦 Archiving from web/..."
+            tar -czf website.tar.gz -C web .
+          fi
 
- 
       - name: Upload Website Artifact
         uses: actions/upload-artifact@v4
         with:
           name: website-code
           path: website.tar.gz
- 
+
   deploy:
     name: Deploy Stage - Transfer to XAMPP Server
     runs-on: self-hosted
     needs: build
- 
+
     steps:
       - name: Download Website Artifact
         uses: actions/download-artifact@v4
         with:
           name: website-code
           path: .
+
       - name: Copy & Extract Artifact on Remote
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY_RHEL }}" > private_key.pem
           chmod 600 private_key.pem
 
-          # Copy the tarball to remote user's home
+          echo "📤 Copying website.tar.gz to remote server..."
           scp -i private_key.pem -o StrictHostKeyChecking=no website.tar.gz \
             ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/home/${{ secrets.USERNAME }}/
 
-          # Extract with sudo into /opt/lampp/htdocs and clean up
+          echo "📂 Extracting into /opt/lampp/htdocs..."
           ssh -i private_key.pem -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} \
             "sudo tar -xzf /home/${{ secrets.USERNAME }}/website.tar.gz -C /opt/lampp/htdocs/ && rm /home/${{ secrets.USERNAME }}/website.tar.gz"
 
@@ -65,29 +72,30 @@ jobs:
         run: |
           ssh -i private_key.pem -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} \
             "sudo /opt/lampp/lampp restartapache"
- 
+
+      - name: Cleanup SSH Key
+        run: rm -f private_key.pem
+
   test:
     name: Test Stage - Validate Website
     runs-on: self-hosted
     needs: deploy
- 
+
     steps:
       - name: Wait for Web Server
         run: sleep 10
 
       - name: Test Root URL
         run: |
-          echo "Checking root URL..."
+          echo "🔍 Checking root URL..."
           curl -I http://${{ secrets.SERVER_IP }}/ | grep "200 OK" || exit 1
 
       - name: Test Index Page
         run: |
-          echo "Checking /index.html..."
+          echo "🔍 Checking /index.html..."
           curl -I http://${{ secrets.SERVER_IP }}/index.html | grep "200 OK" || exit 1
 
       - name: Verify Index Content
         run: |
-          echo "Verifying index.html content..."
-          curl -s http://${{ secrets.SERVER_IP }}/index.html | grep "Welcome" || exit 1    
-      
- 
+          echo "🔍 Verifying index.html content..."
+          curl -s http://${{ secrets.SERVER_IP }}/index.html | grep "Welcome" || exit 1
