@@ -55,7 +55,10 @@ jobs:
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY_RHEL }}" > private_key.pem
           chmod 600 private_key.pem
-          scp -i private_key.pem -o StrictHostKeyChecking=no -r * ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/opt/lampp/htdocs/
+          scp -i private_key.pem -o StrictHostKeyChecking=no website.tar.gz \ ${{ secrets.USERNAME }}@${{ secrets.HOST }}:/home/${{ secrets.USERNAME }}/
+
+          ssh -i private_key.pem -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} \ 
+            "sudo tar -xzf /home/${{ secrets.USERNAME }}/website.tar.gz -C /opt/lampp/htdocs/ && rm /home/${{ secrets.USERNAME }}/website.tar.gz"
  
       - name: Restart Apache in XAMPP
         run: |
